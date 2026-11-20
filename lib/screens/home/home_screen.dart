@@ -85,6 +85,7 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 _SectionTitle(
                   title: 'Recent Outfits',
+                  hint: 'Tap a card for details',
                   onTap: () => state.setTab(1),
                 ),
                 const SizedBox(height: 12),
@@ -99,10 +100,16 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, this.action, required this.onTap});
+  const _SectionTitle({
+    required this.title,
+    this.action,
+    this.hint,
+    required this.onTap,
+  });
 
   final String title;
   final String? action;
+  final String? hint;
   final VoidCallback onTap;
 
   @override
@@ -113,9 +120,17 @@ class _SectionTitle extends StatelessWidget {
       child: Row(
         children: [
           Text(title, style: AppText.body(17, weight: FontWeight.w600)),
-          if (action == null)
-            const Icon(Icons.chevron_right, color: AppColors.gold)
-          else ...[
+          if (action == null) ...[
+            const Icon(Icons.chevron_right, color: AppColors.gold),
+            // Revisi usability (Temuan 2): petunjuk bahwa kartu bisa di-tap.
+            if (hint != null) ...[
+              const Spacer(),
+              Text(
+                hint!,
+                style: AppText.body(11, color: AppColors.textTertiary),
+              ),
+            ],
+          ] else ...[
             const Spacer(),
             Text(
               action!,
@@ -418,7 +433,35 @@ class _RecentOutfits extends StatelessWidget {
                     Routes.outfitDetail,
                     arguments: {'outfitId': outfit.id, 'date': date},
                   ),
-                  child: OutfitArt(items: state.itemsOf(outfit), height: 110),
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: OutfitArt(
+                          items: state.itemsOf(outfit),
+                          height: 110,
+                        ),
+                      ),
+                      // Revisi usability (Temuan 2): panah bulat emas = bisa di-tap.
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            color: AppColors.bgElevated,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.gold),
+                          ),
+                          child: const Icon(
+                            Icons.chevron_right,
+                            size: 16,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 8),

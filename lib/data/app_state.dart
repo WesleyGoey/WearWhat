@@ -91,12 +91,35 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Nilai item sebelum Mark as Worn, per outfit, untuk tombol Undo.
+  // shortcut: hanya di memori dan tidak reset saat ganti hari, ganti saat ada backend.
+  final _wornBackup = <String, List<(ClothingItem, int, DateTime?, bool)>>{};
+
+  bool isWornToday(Outfit o) => _wornBackup.containsKey(o.id);
+
   /// Tambah worn counter dan otomatis set Cooldown.
   void markWorn(Outfit o) {
-    for (final i in itemsOf(o)) {
+    if (isWornToday(o)) return;
+    final items = itemsOf(o);
+    _wornBackup[o.id] = [
+      for (final i in items) (i, i.worn, i.lastWorn, i.cooldown),
+    ];
+    for (final i in items) {
       i.worn++;
       i.lastWorn = DateTime.now();
       i.cooldown = true;
+    }
+    notifyListeners();
+  }
+
+  /// Batalkan Mark as Worn (tombol Undo di snackbar).
+  void undoWorn(Outfit o) {
+    final backup = _wornBackup.remove(o.id);
+    if (backup == null) return;
+    for (final (i, worn, lastWorn, cooldown) in backup) {
+      i.worn = worn;
+      i.lastWorn = lastWorn;
+      i.cooldown = cooldown;
     }
     notifyListeners();
   }

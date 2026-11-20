@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 import '../../app/routes.dart';
 import '../../data/app_state.dart';
 import '../../data/models.dart';
@@ -11,12 +10,10 @@ import '../../widgets/chips.dart';
 import '../../widgets/clothing_art.dart';
 import '../../widgets/headers.dart';
 
-
 /// Detail outfit. arguments: {'outfitId': String, 'date': DateTime?}.
 /// Kalau dibuka dari kalender (ada date), tombol "Remove from day" muncul.
 class OutfitDetailScreen extends StatelessWidget {
   const OutfitDetailScreen({super.key});
-
 
   Future<void> _delete(BuildContext context, Outfit o) async {
     final ok = await showDialog<bool>(
@@ -44,13 +41,11 @@ class OutfitDetailScreen extends StatelessWidget {
     AppState.instance.deleteOutfit(o.id);
   }
 
-
   @override
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)!.settings.arguments as Map;
     final id = args['outfitId'] as String;
     final date = args['date'] as DateTime?;
-
 
     return ListenableBuilder(
       listenable: AppState.instance,
@@ -61,7 +56,6 @@ class OutfitDetailScreen extends StatelessWidget {
         final items = state.itemsOf(o);
         final dayOutfits = date == null ? <Outfit>[] : state.outfitsOn(date);
         final index = dayOutfits.indexOf(o);
-
 
         return Scaffold(
           body: SafeArea(
@@ -86,7 +80,25 @@ class OutfitDetailScreen extends StatelessWidget {
                           style: AppText.eyebrow,
                         ),
                       const SizedBox(height: 4),
-                      Text(o.name, style: AppText.display(28)),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Text(o.name, style: AppText.display(28)),
+                          ),
+                          // Revisi usability (Temuan 2): petunjuk item bisa di-tap.
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Text(
+                              'Tap an item for details',
+                              style: AppText.body(
+                                11,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 12),
                       for (final it in items)
                         Container(
@@ -148,26 +160,54 @@ class OutfitDetailScreen extends StatelessWidget {
                                       : null,
                                   highlight: it.cooldown,
                                 ),
+                                const SizedBox(width: 6),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  color: AppColors.gold,
+                                  size: 22,
+                                ),
                               ],
                             ),
                           ),
                         ),
-                      const SizedBox(height: 12),
-                      PrimaryButton(
-                        label: 'Mark as Worn',
-                        icon: Icons.check,
-                        onPressed: () {
-                          state.markWorn(o);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${o.name} marked as worn. Items are now in cooldown.',
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 20),
+                      if (state.isWornToday(o))
+                        const SecondaryButton(
+                          label: 'Worn today',
+                          icon: Icons.check,
+                          color: AppColors.textTertiary,
+                          onPressed: null,
+                        )
+                      else
+                        PrimaryButton(
+                          label: 'Mark as Worn',
+                          icon: Icons.check,
+                          onPressed: () {
+                            state.markWorn(o);
+                            ScaffoldMessenger.of(context)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
+                                SnackBar(
+                                  content: const Text('Outfit marked as worn'),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: const BorderSide(
+                                      color: AppColors.gold,
+                                    ),
+                                  ),
+                                  action: SnackBarAction(
+                                    label: 'Undo',
+                                    textColor: AppColors.gold,
+                                    onPressed: () => state.undoWorn(o),
+                                  ),
+                                ),
+                              );
+                          },
+                        ),
+                      const SizedBox(height: 16),
+                      // Revisi usability (Temuan 2): garis pemisah aksi utama dan aksi lain.
+                      const Divider(height: 1, color: AppColors.borderSubtle),
+                      const SizedBox(height: 16),
                       Row(
                         children: [
                           OutlineGoldButton(
