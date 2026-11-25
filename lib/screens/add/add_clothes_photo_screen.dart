@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 
 import '../../app/routes.dart';
@@ -22,11 +23,31 @@ class AddClothesPhotoScreen extends StatefulWidget {
 
 class _AddClothesPhotoScreenState extends State<AddClothesPhotoScreen> {
   bool _flash = false;
+  bool _front = false;
 
 
-  void _soon() => ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Camera access is coming soon.')),
-  );
+  /// Buka kamera atau galeri HP, lalu kirim fotonya ke layar Review.
+  Future<void> _pick(ImageSource source) async {
+    try {
+      final file = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 1080,
+        imageQuality: 80,
+        preferredCameraDevice: _front ? CameraDevice.front : CameraDevice.rear,
+      );
+      if (file == null) return; // user batal
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      Navigator.pushNamed(context, Routes.addClothesReview, arguments: bytes);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open the camera. Check app permissions.'),
+        ),
+      );
+    }
+  }
 
 
   @override
@@ -58,11 +79,9 @@ class _AddClothesPhotoScreenState extends State<AddClothesPhotoScreen> {
                   ),
                   const SizedBox(height: 24),
                   CameraControls(
-                    // shortcut: foto belum diambil sungguhan; tambah package camera di Sprint 3.
-                    onShutter: () =>
-                        Navigator.pushNamed(context, Routes.addClothesReview),
-                    onGallery: _soon,
-                    onFlip: _soon,
+                    onShutter: () => _pick(ImageSource.camera),
+                    onGallery: () => _pick(ImageSource.gallery),
+                    onFlip: () => setState(() => _front = !_front),
                   ),
                   const SizedBox(height: 20),
                   Center(
