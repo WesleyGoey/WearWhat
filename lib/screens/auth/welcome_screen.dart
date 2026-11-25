@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 
 import '../../app/routes.dart';
-import '../../data/app_state.dart';
+import '../../data/dummy_data.dart';
+import '../../data/models.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/buttons.dart';
@@ -17,7 +18,15 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = AppState.instance;
+    // Kartu dekorasi memakai data contoh, karena user belum login di layar ini.
+    final items = dummyItems();
+    final outfits = dummyOutfits();
+    List<ClothingItem> itemsOf(Outfit o) => [
+      for (final c in ClothingCategory.values)
+        if (o.items[c] != null) items.firstWhere((i) => i.id == o.items[c]),
+    ];
+
+
     Widget card(int outfit, double angle, Offset offset, {bool front = false}) {
       return Transform.translate(
         offset: offset,
@@ -29,7 +38,7 @@ class WelcomeScreen extends StatelessWidget {
             child: PaperCard(
               radius: 18,
               child: OutfitArt(
-                items: state.itemsOf(state.outfits[outfit]),
+                items: itemsOf(outfits[outfit]),
                 height: front ? 170 : 150,
               ),
             ),
