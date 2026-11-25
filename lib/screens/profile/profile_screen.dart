@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-
 import '../../app/routes.dart';
 import '../../data/app_state.dart';
+import '../../data/auth_service.dart';
 import '../../data/models.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_theme.dart';
@@ -10,21 +10,20 @@ import '../../widgets/buttons.dart';
 import '../../widgets/clothing_art.dart';
 import '../../widgets/profile_pickers.dart';
 
-
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
-
 
   Future<void> _logout(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => const _LogoutDialog(),
     );
-    if (ok != true || !context.mounted) return;
+    if (ok != true) return;
+    await AuthService.signOut();
     AppState.instance.logout();
+    if (!context.mounted) return;
     Navigator.pushNamedAndRemoveUntil(context, Routes.welcome, (_) => false);
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +38,6 @@ class ProfileScreen extends StatelessWidget {
         final maxWorn = top3.isEmpty || top3.first.worn == 0
             ? 1
             : top3.first.worn;
-
 
         return SafeArea(
           child: ListView(
@@ -189,14 +187,11 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-
 class _Stat extends StatelessWidget {
   const _Stat({required this.value, required this.label});
 
-
   final int value;
   final String label;
-
 
   @override
   Widget build(BuildContext context) => Expanded(
@@ -220,10 +215,8 @@ class _Stat extends StatelessWidget {
   );
 }
 
-
 class _LogoutDialog extends StatelessWidget {
   const _LogoutDialog();
-
 
   @override
   Widget build(BuildContext context) {
