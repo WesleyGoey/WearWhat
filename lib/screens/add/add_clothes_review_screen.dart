@@ -1,6 +1,4 @@
-import 'dart:math';
-
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 
@@ -35,35 +33,49 @@ class _AddClothesReviewScreenState extends State<AddClothesReviewScreen> {
   ];
 
 
-  // shortcut: hasil "AI" masih acak; ganti dengan model AI sortir foto (S3-03).
-  final _rng = Random();
-  late final ClothingCategory _detected =
-      ClothingCategory.values[_rng.nextInt(ClothingCategory.values.length)];
-  late final Color _color = _palette[_rng.nextInt(_palette.length)];
-  late ClothingCategory _category = _detected;
+  // shortcut: deteksi AI belum ada di MVP, jadi user memilih kategori dan
+  // warna sendiri. Ganti dengan model AI sortir foto (S3-03).
+  ClothingCategory _category = ClothingCategory.top;
+  Color _color = _palette.first;
   final Set<Season> _seasons = {Season.summer};
+  bool _saving = false;
 
 
-  void _save() {
+  Future<void> _save(Uint8List? photo) async {
     final state = AppState.instance;
-    state.addItem(
-      ClothingItem(
-        id: state.newId(),
-        category: _category,
-        color: _color,
-        seasons: {..._seasons},
-      ),
-    );
+    final category = _category;
+    setState(() => _saving = true);
+    try {
+      await state.addItem(
+        ClothingItem(
+          id: state.newId(),
+          category: category,
+          color: _color,
+          seasons: {..._seasons},
+        ),
+        photo: photo,
+      );
+    } catch (e) {
+      debugPrint('Save item failed: $e');
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not save. Check your connection.')),
+      );
+      return;
+    }
+    if (!mounted) return;
     state.setTab(1);
     Navigator.popUntil(context, ModalRoute.withName(Routes.main));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${_category.label} saved to wardrobe.')),
+      SnackBar(content: Text('${category.label} saved to wardrobe.')),
     );
   }
 
 
   @override
   Widget build(BuildContext context) {
+    final photo = ModalRoute.of(context)!.settings.arguments as Uint8List?;
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -78,11 +90,21 @@ class _AddClothesReviewScreenState extends State<AddClothesReviewScreen> {
                       dimension: 180,
                       child: PaperCard(
                         radius: 24,
-                        child: ClothingArt(
-                          category: _category,
-                          color: _color,
-                          size: 140,
-                        ),
+                        child: photo == null
+                            ? ClothingArt(
+                                category: _category,
+                                color: _color,
+                                size: 140,
+                              )
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Image.memory(
+                                  photo,
+                                  width: 180,
+                                  height: 180,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -112,7 +134,7 @@ class _AddClothesReviewScreenState extends State<AddClothesReviewScreen> {
                           radius: 20,
                           backgroundColor: AppColors.gold,
                           child: Icon(
-                            Icons.auto_awesome,
+                            Icons.edit_outlined,
                             color: AppColors.bgBase,
                             size: 18,
                           ),
@@ -121,13 +143,13 @@ class _AddClothesReviewScreenState extends State<AddClothesReviewScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('AI DETECTED', style: AppText.eyebrow),
+                            Text('AI COMING SOON', style: AppText.eyebrow),
                             Text(
-                              _detected.label,
+                              'Tag it yourself',
                               style: AppText.body(16, weight: FontWeight.w600),
                             ),
                             Text(
-                              'Not right? Change the category below.',
+                              'Pick the category, colour, and season below.',
                               style: AppText.body(
                                 11,
                                 color: AppColors.textSecondary,
@@ -153,6 +175,36 @@ class _AddClothesReviewScreenState extends State<AddClothesReviewScreen> {
                           label: c.label,
                           selected: c == _category,
                           onTap: () => setState(() => _category = c),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Colour',
+                    style: AppText.body(13, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      for (final c in _palette)
+                        GestureDetector(
+                          onTap: () => setState(() => _color = c),
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: c,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: c == _color
+                                    ? AppColors.gold
+                                    : AppColors.borderSubtle,
+                                width: c == _color ? 3 : 1,
+                              ),
+                            ),
+                          ),
                         ),
                     ],
                   ),
@@ -201,7 +253,10 @@ class _AddClothesReviewScreenState extends State<AddClothesReviewScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-              child: PrimaryButton(label: 'Save to Wardrobe', onPressed: _save),
+              child: PrimaryButton(
+                label: _saving ? 'Saving...' : 'Save to Wardrobe',
+                onPressed: _saving ? null : () => _save(photo),
+              ),
             ),
           ],
         ),
