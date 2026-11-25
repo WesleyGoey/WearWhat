@@ -65,6 +65,8 @@ class ClothingItem {
     this.worn = 0,
     this.lastWorn,
     this.cooldown = false,
+    this.photoPath,
+    this.photoUrl,
   }) : seasons = seasons ?? {};
 
 
@@ -75,15 +77,32 @@ class ClothingItem {
   int worn;
   DateTime? lastWorn;
   bool cooldown;
+
+
+  /// Lokasi foto di bucket Storage, misalnya `user-id/id-baju.jpg`.
+  String? photoPath;
+
+
+  /// Link sementara (signed URL) untuk menampilkan foto. Tidak disimpan ke database.
+  String? photoUrl;
 }
 
 
 class Outfit {
-  Outfit({required this.id, required this.name, required this.items});
+  Outfit({
+    required this.id,
+    required this.name,
+    required this.items,
+    this.lastWornOn,
+  });
 
 
   final String id;
   String name;
+
+
+  /// Tanggal terakhir outfit ditandai Mark as Worn.
+  DateTime? lastWornOn;
 
 
   /// Kategori -> id ClothingItem.
