@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/chips.dart';
 import '../../widgets/clothing_art.dart';
+import '../../widgets/item_image.dart';
 
 
 class WardrobeScreen extends StatefulWidget {
@@ -135,11 +136,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                         Routes.itemDetail,
                         arguments: it.id,
                       ),
-                      child: ClothingArt(
-                        category: it.category,
-                        color: it.color,
-                        size: 70,
-                      ),
+                      child: ItemImage(item: it, size: 70),
                     ),
                   ),
                   const SizedBox(height: 6),
