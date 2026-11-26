@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 
 import '../../app/routes.dart';
+import '../../data/app_state.dart';
+import '../../data/auth_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_text_field.dart';
@@ -22,6 +24,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
+  bool _loading = false;
 
 
   @override
@@ -33,8 +36,11 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
 
-  // shortcut: belum ada pendaftaran sungguhan; sambungkan ke backend setelah S2-03.
-  void _createAccount() {
+  void _showMessage(String text) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+
+
+  Future<void> _createAccount() async {
     String? error;
     if (!_email.text.contains('@')) {
       error = 'Enter a valid email.';
@@ -43,12 +49,19 @@ class _SignupScreenState extends State<SignupScreen> {
     } else if (_password.text != _confirm.text) {
       error = 'Passwords do not match.';
     }
-    if (error != null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error)));
-      return;
-    }
-    Navigator.pushNamed(context, Routes.basicInfo);
+    if (error != null) return _showMessage(error);
+    setState(() => _loading = true);
+    error = await AuthService.signUp(_email.text.trim(), _password.text);
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (error != null) return _showMessage(error);
+    // Akun baru: kosongkan data lama di HP, lalu isi profil.
+    AppState.instance.logout();
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      Routes.basicInfo,
+      (r) => r.isFirst,
+    );
   }
 
 
@@ -95,8 +108,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 24),
                     PrimaryButton(
-                      label: 'Create Account',
-                      onPressed: _createAccount,
+                      label: _loading
+                          ? 'Creating account...'
+                          : 'Create Account',
+                      onPressed: _loading ? null : _createAccount,
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -134,8 +149,9 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ),
                       ),
+                      // shortcut: daftar lewat Google belum diaktifkan di MVP.
                       onPressed: () =>
-                          Navigator.pushNamed(context, Routes.basicInfo),
+                          _showMessage('Google sign-up is coming soon.'),
                     ),
                     const SizedBox(height: 16),
                     Text.rich(

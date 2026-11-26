@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/chips.dart';
 import '../../widgets/clothing_art.dart';
 import '../../widgets/headers.dart';
+import '../../widgets/item_image.dart';
 
 
 /// Detail satu pakaian. arguments: id item (String).
@@ -39,11 +40,7 @@ class ItemDetailScreen extends StatelessWidget {
                         height: 250,
                         child: PaperCard(
                           radius: 24,
-                          child: ClothingArt(
-                            category: it.category,
-                            color: it.color,
-                            size: 200,
-                          ),
+                          child: ItemImage(item: it, size: 200),
                         ),
                       ),
                       const SizedBox(height: 20),
