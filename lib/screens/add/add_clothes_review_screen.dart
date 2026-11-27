@@ -41,6 +41,11 @@ class _AddClothesReviewScreenState extends State<AddClothesReviewScreen> {
   bool _saving = false;
 
 
+  // Satu id per layar: kalau Save diulang setelah gagal, foto yang sama
+  // ditimpa di Storage, bukan menambah file baru.
+  final _itemId = AppState.instance.newId();
+
+
   Future<void> _save(Uint8List? photo) async {
     final state = AppState.instance;
     final category = _category;
@@ -48,7 +53,7 @@ class _AddClothesReviewScreenState extends State<AddClothesReviewScreen> {
     try {
       await state.addItem(
         ClothingItem(
-          id: state.newId(),
+          id: _itemId,
           category: category,
           color: _color,
           seasons: {..._seasons},
@@ -60,7 +65,15 @@ class _AddClothesReviewScreenState extends State<AddClothesReviewScreen> {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not save. Check your connection.')),
+        SnackBar(
+          // Mode debug menampilkan error asli supaya mudah dicari penyebabnya.
+          content: Text(
+            kDebugMode
+                ? 'Could not save: $e'
+                : 'Could not save. Check your connection.',
+          ),
+          duration: const Duration(seconds: 8),
+        ),
       );
       return;
     }

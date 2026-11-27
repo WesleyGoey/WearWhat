@@ -1,15 +1,16 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 
 import '../../app/routes.dart';
-import '../../data/models.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/buttons.dart';
-import '../../widgets/clothing_art.dart';
 import '../../widgets/frames.dart';
 import '../../widgets/headers.dart';
+import '../../widgets/live_camera.dart';
 
 
 class AddClothesPhotoScreen extends StatefulWidget {
@@ -22,29 +23,31 @@ class AddClothesPhotoScreen extends StatefulWidget {
 
 
 class _AddClothesPhotoScreenState extends State<AddClothesPhotoScreen> {
+  final _camera = GlobalKey<LiveCameraState>();
   bool _flash = false;
-  bool _front = false;
 
 
-  /// Buka kamera atau galeri HP, lalu kirim fotonya ke layar Review.
-  Future<void> _pick(ImageSource source) async {
+  /// Ambil foto dari pratinjau kamera, atau pilih dari galeri.
+  /// Hasilnya dikirim ke layar Review.
+  Future<void> _capture({bool gallery = false}) async {
     try {
-      final file = await ImagePicker().pickImage(
-        source: source,
-        maxWidth: 1080,
-        imageQuality: 80,
-        preferredCameraDevice: _front ? CameraDevice.front : CameraDevice.rear,
-      );
-      if (file == null) return; // user batal
-      final bytes = await file.readAsBytes();
-      if (!mounted) return;
+      Uint8List? bytes;
+      if (gallery) {
+        final file = await ImagePicker().pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1080,
+          imageQuality: 80,
+        );
+        bytes = await file?.readAsBytes();
+      } else {
+        bytes = await _camera.currentState?.takePicture();
+      }
+      if (bytes == null || !mounted) return; // batal atau kamera belum siap
       Navigator.pushNamed(context, Routes.addClothesReview, arguments: bytes);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open the camera. Check app permissions.'),
-        ),
+        const SnackBar(content: Text('Could not take the photo. Try again.')),
       );
     }
   }
@@ -61,38 +64,33 @@ class _AddClothesPhotoScreenState extends State<AddClothesPhotoScreen> {
               trailing: CircleIconButton(
                 icon: _flash ? Icons.flash_on : Icons.flash_off,
                 tooltip: 'Flash',
-                onPressed: () => setState(() => _flash = !_flash),
+                onPressed: () async {
+                  final on = await _camera.currentState?.toggleFlash();
+                  if (on != null) setState(() => _flash = on);
+                },
               ),
             ),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-                children: [
-                  const CameraFrame(
-                    height: 380,
-                    caption: 'Place one item on a plain background',
-                    child: ClothingArt(
-                      category: ClothingCategory.top,
-                      color: AppColors.paper,
-                      size: 190,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  CameraControls(
-                    onShutter: () => _pick(ImageSource.camera),
-                    onGallery: () => _pick(ImageSource.gallery),
-                    onFlip: () => setState(() => _front = !_front),
-                  ),
-                  const SizedBox(height: 20),
-                  Center(
-                    child: Text(
-                      'Tip: lay the item flat in good light',
-                      style: AppText.body(12, color: AppColors.textTertiary),
-                    ),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                child: CameraFrame(
+                  caption: 'Place one item on a plain background',
+                  child: LiveCamera(key: _camera),
+                ),
               ),
             ),
+            const SizedBox(height: 20),
+            CameraControls(
+              onShutter: _capture,
+              onGallery: () => _capture(gallery: true),
+              onFlip: () => _camera.currentState?.flip(),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Tip: lay the item flat in good light',
+              style: AppText.body(12, color: AppColors.textTertiary),
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

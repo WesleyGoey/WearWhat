@@ -31,19 +31,20 @@ class DashedBox extends StatelessWidget {
 
 
 /// Area kamera: latar coklat gelap, sudut bingkai emas, caption di bawah.
-/// shortcut: belum pakai kamera sungguhan; tambahkan package camera di Sprint 3.
+/// [child] biasanya LiveCamera (pratinjau kamera langsung).
 class CameraFrame extends StatelessWidget {
   const CameraFrame({
     super.key,
     required this.child,
     required this.caption,
-    this.height = 330,
+    this.height,
   });
 
 
   final Widget child;
   final String caption;
-  final double height;
+  /// Kosong = isi seluruh ruang yang diberikan (pakai di dalam Expanded).
+  final double? height;
 
 
   @override
@@ -60,8 +61,10 @@ class CameraFrame extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          Positioned.fill(child: CustomPaint(painter: _CornerPainter())),
           Center(child: child),
+          Positioned.fill(
+            child: IgnorePointer(child: CustomPaint(painter: _CornerPainter())),
+          ),
           Positioned(
             left: 0,
             right: 0,

@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <key>NSCameraUsageDescription</key>
-	<string>WearWhat uses the camera to photograph your clothes.</string>
+	<string>WearWhat uses the camera to photograph your clothes and take your selfie.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>WearWhat lets you pick clothing photos from your library.</string>
 <dict>
